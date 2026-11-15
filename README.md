@@ -95,3 +95,36 @@ You will need:
 - UCF-Crime from its [dataset page](https://www.crcv.ucf.edu/projects/real-world/).
 
 Paths at the top of each script point to our HPC account, so change them for your machine. Checkpoints and frame caches are not included.
+
+## Current model: whole-video test of the CVPR 2024 and 2025 papers
+
+The same network, trained on crime moments cut with the UCA time stamps plus a Background class, and tested on the 140 whole test crime videos of the UCF-Crime detection split (top-1 accuracy over 13 crimes, mean of three training runs).
+
+| Method | Result |
+|---|---:|
+| Wu et al., CVPR 2024 (CLIP, 6 of 13 crimes trained) | 41.43% |
+| Anomize, CVPR 2025 (CLIP, 6 of 13 crimes trained) | 47.14% |
+| Ours (no CLIP, all 13 crimes, UCA time stamps) | 43.10% ± 1.47 (41.43 / 45.00 / 42.86) |
+
+The settings differ, and one run on 140 videos has a range of about ±8 points, so this is a comparison of level, not a ranking.
+
+What changed over the first version of this test (38.33% ± 3.8): a loss that balances the 13 crimes (logit adjustment), training on random pieces of the crime moment, testing at four time scales (60 clips, top-4 per crime), and choosing the epoch on whole validation videos.
+
+Read at three levels on the full official test set (140 crime and 150 normal videos, no retraining):
+
+| Question | Result |
+|---|---:|
+| Is there a crime? (AUC, per video) | 90.43% ± 1.14 |
+| Violence, property or hazard? | 62.62% ± 1.78 |
+| Which of the 13 crimes? | 43.10% ± 1.47 |
+
+The three groups were chosen after the crime-type results were seen. Shooting is not recognised, and about 22% of normal videos are flagged as crime.
+
+| Path | What it is |
+|---|---|
+| `v6_crime_moments/prepare_data_v6.py`, `prepare_background_v7.py`, `prepare_test_whole_v7.py`, `prepare_val_whole_v9.py` | Crime moments, Background clips, whole test and validation videos |
+| `v6_crime_moments/train_v9.py`, `run_train_v9.sh`, `submit_v9.sh` | Training of the current model (reuses `train_v6.py`) |
+| `v6_crime_moments/gnconv_st_v9.py` | A lighter gated convolution with separable convolutions (written, not yet evaluated) |
+| `v6_crime_moments/V9_RUN_STEPS.md`, `V9_EXPLAINED.md` | Run steps, and what changed and why |
+| `two_stage_test/` | Crime or not, then which crime, on the full test set |
+| `demo/` | One command that takes a video and prints the answer |
